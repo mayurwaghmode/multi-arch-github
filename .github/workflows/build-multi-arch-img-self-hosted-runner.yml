@@ -29,7 +29,11 @@ jobs:
           rm -rf /root/$GH_REPO
           git clone -b multi-arch-natively https://github.com/mayurwaghmode/multi-arch-github.git /root/multi-arch-github
           echo -e "SSH into the Power machine and execute the script\n"
-          ssh root@${{ secrets.PPC64LE_MACHINE_IP }} < /root/$GH_REPO/script-to-run-on-ppc64le.sh $QUAY_REPO $ROBOT_USER $ROBOT_TOKEN
+          ssh root@${{ secrets.PPC64LE_MACHINE_IP }} < /root/$GH_REPO/script-to-run-on-ppc64le.sh 
+        env:
+          $QUAY_REPO: quay.io/mayurwaghmode111/gha-multi-arch
+          $ROBOT_USER: ${{ secrets.QUAY_USER }}
+          $ROBOT_TOKEN: ${{ secrets.QUAY_PWD }}
           
       - name: Build the multi-image multi-arch manifest
         run: |
