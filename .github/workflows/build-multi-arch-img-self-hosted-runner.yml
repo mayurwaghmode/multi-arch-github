@@ -4,30 +4,50 @@ on:
     branches: multi-arch-natively
 
   workflow_dispatch:
+env:
+  QUAY_REPO: quay.io/mayurwaghmode111/gha-multi-arch
+  ROBOT_USER: ${{ secrets.QUAY_USER }}
+  ROBOT_TOKEN: ${{ secrets.QUAY_PWD }}
+  GH_REPO: multi-arch-github
+
 jobs:
-  workflow-on-self-hosted-runner:
+  x86-image:
       runs-on: self-hosted
       steps:
       - uses: actions/checkout@v3
       - name: Build amd64 image natively
         run: |
          buildah bud -f Dockerfile -t quay.io/mayurwaghmode111/gha-multi-arch:$(uname -m) .
-         buildah login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PWD }} quay.io
+         buildah login -u ${{ secrets.ROBOT_USER }} -p ${{ secrets.ROBOT_TOKEN }} quay.io
          podman push quay.io/mayurwaghmode111/gha-multi-arch:$(uname -m)
-         
+  ppc64le-image:
+      runs-on: self-hosted
+      steps:
+      - uses: actions/checkout@v3
       - name: ssh into the ppc64le machine and build the ppc64le image natively
-        run: |
-          rm -rf /root/multi-arch-github
-          git clone -b multi-arch-natively https://github.com/mayurwaghmode/multi-arch-github.git /root/multi-arch-github
-          echo -e "SSH into the Power machine and execute the script\n"
-          ssh root@${{ secrets.PPC64LE_MACHINE_IP }} < /root/multi-arch-github/script-to-run-on-ppc64le.sh
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PPC64LE_MACHINE_IP }}
+          username: root
+          key: ${{ secrets.KEY }}
+          port: 22
+          envs: QUAY_REPO,ROBOT_USER,ROBOT_TOKEN
+          script: |
+            echo -e "Display the bastion machine architecture\n" 
+            arch
+            rm -rf /root/$GH_REPO
+            git clone git clone -b multi-arch-natively https://github.com/mayurwaghmode/multi-arch-github.git /root/$GH_REPO
+            cd /root/$GH_REPO
+            echo -e "SSH into the Power machine and execute the script\n"
+            chmod +x ./script-to-run-on-ppc64le.sh
+            ./script-to-run-on-ppc64le.sh $QUAY_REPO $ROBOT_USER $ROBOT_TOKEN
           
       - name: Build the multi-image multi-arch manifest
         run: |
-          buildah manifest create quay.io/mayurwaghmode111/gha-multi-arch 
-          buildah manifest add quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:ppc64le
-          buildah manifest add quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:x86_64
-          buildah manifest inspect quay.io/mayurwaghmode111/gha-multi-arch
-          buildah login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PWD }} quay.io
-          podman manifest push --all quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:native
-          buildah manifest rm quay.io/mayurwaghmode111/gha-multi-arch
+          buildah manifest create $QUAY_REPO 
+          buildah manifest add $QUAY_REPO $QUAY_REPO:ppc64le
+          buildah manifest add $QUAY_REPO $QUAY_REPO:x86_64
+          buildah manifest inspect $QUAY_REPO
+          buildah login -u ${{ secrets.ROBOT_USER }} -p ${{ secrets.ROBOT_TOKEN }} quay.io
+          podman manifest push --all $QUAY_REPO $QUAY_REPO:native
+          buildah manifest rm $QUAY_REPO
