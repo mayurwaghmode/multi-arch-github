@@ -11,9 +11,9 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build amd64 image natively
         run: |
-         buildah bud -f Dockerfile -t quay.io/mayurwaghmode111/gha-multi-arch:$ARCH .
+         buildah bud -f Dockerfile -t quay.io/mayurwaghmode111/gha-multi-arch:$(uname -m) .
          buildah login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PWD }} quay.io
-         podman push quay.io/mayurwaghmode111/gha-multi-arch:$ARCH
+         podman push quay.io/mayurwaghmode111/gha-multi-arch:$(uname -m)
       - name: ssh into the ppc64le machine and build the ppc64le image natively
         run: |
           rm -rf /root/multi-arch-github
