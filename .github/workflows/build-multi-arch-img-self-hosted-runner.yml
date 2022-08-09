@@ -1,0 +1,24 @@
+name: Github Action self-hosted runner for building Multi-architecture images using Qemu user static and Buildah
+on:
+  push:
+    branches: main
+
+  workflow_dispatch:
+jobs:
+  workflow-on-self-hosted-runner:
+      runs-on: self-hosted
+      steps:
+      - uses: actions/checkout@v3
+      - name: Build multi-arch images on self hosted runner(x86)
+        run: |
+          sudo podman run --rm --privileged docker.io/multiarch/qemu-user-static --reset -p yes
+          echo -e "Display the self hosted runner architecture\n" 
+          arch
+          buildah bud --platform=linux/amd64 -t quay.io/mayurwaghmode111/gha-multi-arch:amd64
+          buildah bud --platform=linux/ppc64le -t quay.io/mayurwaghmode111/gha-multi-arch:ppc64le
+          buildah manifest create quay.io/mayurwaghmode111/gha-multi-arch
+          buildah manifest add quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:amd64
+          buildah manifest add quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:ppc64le
+          buildah login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PWD }} quay.io
+          podman manifest push --all quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:multi-arch
+          buildah manifest rm quay.io/mayurwaghmode111/gha-multi-arch
