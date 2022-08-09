@@ -1,7 +1,7 @@
-name: Github Action self-hosted runner for building Multi-architecture images using Qemu user static and Buildah
+name: Github Action workflow for building Multi-architecture images using Qemu user static and Buildah on native architecture
 on:
   push:
-    branches: main
+    branches: multi-arch-natively
 
   workflow_dispatch:
 jobs:
@@ -9,16 +9,14 @@ jobs:
       runs-on: self-hosted
       steps:
       - uses: actions/checkout@v3
-      - name: Build multi-arch images on self hosted runner(x86)
+      - name: Build amd64 image natively
         run: |
-          sudo podman run --rm --privileged docker.io/multiarch/qemu-user-static --reset -p yes
-          echo -e "Display the self hosted runner architecture\n" 
-          arch
-          buildah bud --platform=linux/amd64 -t quay.io/mayurwaghmode111/gha-multi-arch:amd64
-          buildah bud --platform=linux/ppc64le -t quay.io/mayurwaghmode111/gha-multi-arch:ppc64le
-          buildah manifest create quay.io/mayurwaghmode111/gha-multi-arch
-          buildah manifest add quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:amd64
-          buildah manifest add quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:ppc64le
-          buildah login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PWD }} quay.io
-          podman manifest push --all quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:multi-arch
-          buildah manifest rm quay.io/mayurwaghmode111/gha-multi-arch
+         buildah bud -f Dockerfile -t quay.io/mayurwaghmode111/gha-multi-arch:$ARCH .
+         buildah login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PWD }} quay.io
+         podman push quay.io/mayurwaghmode111/gha-multi-arch:$ARCH
+      - name: ssh into the ppc64le machine and build the ppc64le image natively
+        run: |
+          rm -rf /root/multi-arch-github
+          git clone -b multi-arch-natively https://github.com/mayurwaghmode/multi-arch-github.git
+          echo -e "SSH into the Power machine and execute the script\n"
+          ssh root@${{ secrets.PPC64LE_MACHINE_IP }} < /root/multi-arch-github/script-to-run-on-ppc64le.sh
