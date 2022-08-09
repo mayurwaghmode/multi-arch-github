@@ -24,12 +24,6 @@ jobs:
       runs-on: self-hosted
       steps:
       - uses: actions/checkout@v3
-    #  - name: ssh into the ppc64le machine and build the ppc64le image natively
-     #   run: |
-      #    rm -rf /root/$GH_REPO
-       #   git clone -b multi-arch-natively https://github.com/mayurwaghmode/multi-arch-github.git /root/multi-arch-github
-        #  echo -e "SSH into the Power machine and execute the script\n"
-         # ssh root@${{ secrets.PPC64LE_MACHINE_IP }} < /root/$GH_REPO/script-to-run-on-ppc64le.sh 
       - uses: garygrossgarten/github-action-ssh@release
         with:
           host: ${{ secrets.PPC64LE_MACHINE_IP }}
@@ -40,12 +34,13 @@ jobs:
             git clone -b multi-arch-natively https://github.com/mayurwaghmode/multi-arch-github.git /root/multi-arch-github
             echo -e "SSH into the Power machine and execute the script\n"
             ./root/$GH_REPO/script-to-run-on-ppc64le.sh $QUAY_REPO $ROBOT_USER $ROBOT_TOKEN
-        env:
-          QUAY_REPO: quay.io/mayurwaghmode111/gha-multi-arch
-          ROBOT_USER: ${{ secrets.QUAY_USER }}
-          ROBOT_TOKEN: ${{ secrets.QUAY_PWD }}
           
-      - name: Build the multi-image multi-arch manifest
+  multi-arch-image:
+      runs-on: self-hosted
+      needs: [x86-image, ppc64le-image]
+      steps:
+      - uses: actions/checkout@v3 
+      - name: Build and push multi-arch manifest
         run: |
           buildah manifest create $QUAY_REPO 
           buildah manifest add $QUAY_REPO $QUAY_REPO:ppc64le
