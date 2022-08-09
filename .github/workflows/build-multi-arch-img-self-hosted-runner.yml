@@ -16,7 +16,7 @@ jobs:
          podman push quay.io/mayurwaghmode111/gha-multi-arch:$(uname -m)
       - name: ssh into the ppc64le machine and build the ppc64le image natively
         run: |
-          rm -rf /root/multi-arch-github
+          rm -rf /root/multi-arch-natively
           git clone -b multi-arch-natively https://github.com/mayurwaghmode/multi-arch-github.git
           echo -e "SSH into the Power machine and execute the script\n"
-          ssh root@${{ secrets.PPC64LE_MACHINE_IP }} < /root/multi-arch-github/script-to-run-on-ppc64le.sh
+          ssh root@${{ secrets.PPC64LE_MACHINE_IP }} < /root/multi-arch-natively/script-to-run-on-ppc64le.sh
