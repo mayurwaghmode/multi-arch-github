@@ -14,9 +14,20 @@ jobs:
          buildah bud -f Dockerfile -t quay.io/mayurwaghmode111/gha-multi-arch:$(uname -m) .
          buildah login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PWD }} quay.io
          podman push quay.io/mayurwaghmode111/gha-multi-arch:$(uname -m)
+         
       - name: ssh into the ppc64le machine and build the ppc64le image natively
         run: |
           rm -rf /root/multi-arch-github
           git clone -b multi-arch-natively https://github.com/mayurwaghmode/multi-arch-github.git /root/multi-arch-github
           echo -e "SSH into the Power machine and execute the script\n"
           ssh root@${{ secrets.PPC64LE_MACHINE_IP }} < /root/multi-arch-github/script-to-run-on-ppc64le.sh
+          
+      - name: Build the multi-image multi-arch manifest
+        run: |
+          buildah manifest create quay.io/mayurwaghmode111/gha-multi-arch 
+          buildah manifest add quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:ppc64le
+          buildah manifest add quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:x86_64
+          buildah manifest inspect quay.io/mayurwaghmode111/gha-multi-arch
+          buildah login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PWD }} quay.io
+          podman manifest push --all quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:native
+          buildah manifest rm quay.io/mayurwaghmode111/gha-multi-arch
