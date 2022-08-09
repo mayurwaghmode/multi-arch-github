@@ -20,6 +20,7 @@ jobs:
          buildah bud -f Dockerfile -t quay.io/mayurwaghmode111/gha-multi-arch:$(uname -m) .
          buildah login -u ${{ secrets.ROBOT_USER }} -p ${{ secrets.ROBOT_TOKEN }} quay.io
          podman push quay.io/mayurwaghmode111/gha-multi-arch:$(uname -m)
+ 
   ppc64le-image:
       runs-on: self-hosted
       steps:
@@ -31,7 +32,7 @@ jobs:
           privateKey: ${{ secrets.KEY}}
           script: |
             rm -rf /root/$GH_REPO
-            git clone -b multi-arch-natively https://github.com/mayurwaghmode/multi-arch-github.git /root/multi-arch-github
+            git clone -b multi-arch-natively https://github.com/mayurwaghmode/multi-arch-github.git /root/$GH_REPO
             echo -e "SSH into the Power machine and execute the script\n"
             ./root/$GH_REPO/script-to-run-on-ppc64le.sh $QUAY_REPO $ROBOT_USER $ROBOT_TOKEN
           
