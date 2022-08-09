@@ -4,6 +4,8 @@ on:
     branches: main
 
   workflow_dispatch:
+env:
+  QUAY_REPO: quay.io/mayurwaghmode111/gha-multi-arch
 jobs:
   workflow-on-self-hosted-runner:
       runs-on: self-hosted
@@ -14,11 +16,11 @@ jobs:
           sudo podman run --rm --privileged docker.io/multiarch/qemu-user-static --reset -p yes
           echo -e "Display the self hosted runner architecture\n" 
           arch
-          buildah bud --platform=linux/amd64 -t quay.io/mayurwaghmode111/gha-multi-arch:amd64
-          buildah bud --platform=linux/ppc64le -t quay.io/mayurwaghmode111/gha-multi-arch:ppc64le
-          buildah manifest create quay.io/mayurwaghmode111/gha-multi-arch
-          buildah manifest add quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:amd64
-          buildah manifest add quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:ppc64le
+          buildah bud --platform=linux/amd64 -t $QUAY_REPO:amd64
+          buildah bud --platform=linux/ppc64le -t $QUAY_REPO:ppc64le
+          buildah manifest create $QUAY_REPO
+          buildah manifest add $QUAY_REPO $QUAY_REPO:amd64
+          buildah manifest add $QUAY_REPO $QUAY_REPO:ppc64le
           buildah login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_PWD }} quay.io
-          podman manifest push --all quay.io/mayurwaghmode111/gha-multi-arch quay.io/mayurwaghmode111/gha-multi-arch:multi-arch
-          buildah manifest rm quay.io/mayurwaghmode111/gha-multi-arch
+          podman manifest push --all $QUAY_REPO $QUAY_REPO:multi-arch
+          buildah manifest rm $QUAY_REPO
