@@ -17,9 +17,9 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build amd64 image natively
         run: |
-         buildah bud -f Dockerfile -t quay.io/mayurwaghmode111/gha-multi-arch:$(uname -m) .
+         buildah bud -f Dockerfile -t $QUAY_REPO:$(uname -m) .
          buildah login -u ${{ secrets.ROBOT_USER }} -p ${{ secrets.ROBOT_TOKEN }} quay.io
-         podman push quay.io/mayurwaghmode111/gha-multi-arch:$(uname -m)
+         podman push $QUAY_REPO:$(uname -m)
  
   ppc64le-image:
       runs-on: self-hosted
